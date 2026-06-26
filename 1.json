@@ -1,0 +1,31 @@
+{
+    "global_style": "3D animation, Pixar style, vibrant colors, cinematic lighting, cute character design",
+    "character_preset": "A small, fluffy ginger tabby cat with big, expressive emerald-green eyes",
+    "voice_preset": "Adam - deep, warm, gentle mature male narrator voice",
+    "scenes": [
+        {
+        "scene_number": 1,
+        "voice_text": "Шел котик по улице, радовался теплому солнышку.",
+        "image_prompt": "The fluffy ginger cat is walking happily down a dusty country road. Sunshine beams through the trees. Happy mood."
+        },
+        {
+        "scene_number": 2,
+        "voice_text": "Но вдруг он не заметил глубокую лужу и упал прямо в неё!",
+        "image_prompt": "The fluffy ginger cat splashes and falls into a muddy puddle on the road. Shocked expression, water splashing up."
+        },
+        {
+        "scene_number": 3,
+        "voice_text": "От обиды малыш горько заплакал, а с неба закапал грибной дождь.",
+        "image_prompt": "The fluffy ginger cat is sitting in a muddy puddle, crying with big tears in its green eyes. A light summer rain with sun shining (sun-shower). In the background, a cozy small house is visible."
+        }
+    ]
+},
+
+{
+    "voice_style": "M1",
+    "text": "Шел котик по улице, радовался теплому солнышку."
+}
+
+{
+    "link": "C://AI/outpot.wav",
+}
