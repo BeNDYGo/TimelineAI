@@ -1,0 +1,12 @@
+# FastAPI и сервер
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+
+# Генерация изображений (Text-to-Image)
+torch==2.5.0
+diffusers==0.31.0
+
+# Генерация речи (Text-to-Speech)
+supertonic==0.1.5
+soundfile==0.12.1

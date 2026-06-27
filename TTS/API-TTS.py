@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from TTS import generateText
 
-app = FastAPI(title="TTS API", description="Text-to-Speech API using Supertonic")
+app = FastAPI()
 
 
 class TTSRequest(BaseModel):
@@ -17,15 +17,6 @@ class TTSResponse(BaseModel):
 
 @app.post("/generate", response_model=TTSResponse)
 async def generate_tts(request: TTSRequest):
-    """
-    Generate text-to-speech audio file.
-    
-    - **voice_style**: Voice style (F1 to M5)
-    - **lang**: Language code (e.g., 'ru', 'en')
-    - **text**: Text to synthesize
-    
-    Returns the generated audio filename and duration in seconds.
-    """
     try:
         filename, duration = generateText(
             voice_style=request.voice_style,
