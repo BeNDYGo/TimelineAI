@@ -12,7 +12,9 @@ from system_prompt import SYSTEM_PROMPT
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 client = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
-
+#client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
+model = "openai/gpt-oss-20b:free"
+#model = "deepseek/deepseek-v4-flash"
 _stdio_cm = None
 _session = None
 
@@ -67,10 +69,9 @@ async def chat(message: str, history: list, api_key: str = None) -> str:
 
     for _ in range(24):
         response = await client.chat.completions.create(
-            model="openai/gpt-oss-20b:free",
+            model=model,
             messages=messages,
             tools=await _tools(),
-            api_key=api_key,
         )
         msg = response.choices[0].message
         messages.append(msg.model_dump(exclude_none=True))
