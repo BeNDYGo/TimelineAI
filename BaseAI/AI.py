@@ -12,9 +12,11 @@ from system_prompt import SYSTEM_PROMPT
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 #client = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
-client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
 #model = "meta-llama/llama-3.3-70b-instruct:free" #meta-llama/llama-3.3-70b-instruct:free   # openai/gpt-oss-20b:free
+
+client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
 model = "deepseek/deepseek-v4-flash"
+
 _stdio_cm = None
 _session = None
 
@@ -67,13 +69,14 @@ async def chat(message: str, history: list) -> str:
     ]
     messages.append({"role": "user", "content": message})
 
-    for _ in range(24):
+    for _ in range(4):
         response = await client.chat.completions.create(
             model=model,
             messages=messages,
             tools=await _tools(),
         )
         msg = response.choices[0].message
+        print(f"\n[MCP]: {msg.content}")
         messages.append(msg.model_dump(exclude_none=True))
 
         if not msg.tool_calls:
@@ -103,7 +106,7 @@ async def _main():
             user_message = input("\nВы: ")
             response = await chat(user_message, history)
             history.append({"user": user_message, "assistant": response})
-            print(f"AI: {response}")
+            print(f"\nAI: {response}")
     finally:
         await close_mcp()
 

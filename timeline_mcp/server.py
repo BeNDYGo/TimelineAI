@@ -12,14 +12,14 @@ mcp = FastMCP("timeline-tools")
 
 @mcp.tool()
 def generate_speech(voice_style: str, lang: str, text: str) -> dict:
-    """Озвучить текст голосом F1, F2 ... F5, M1 - M5. Возвращает filename и duration."""
+    """Озвучить текст голосом"""
     filename, duration = generateText(voice_style, lang, text)
     return {"filename": filename, "duration": duration}
 
 
 @mcp.tool()
 def generate_image(prompt: str) -> dict:
-    """Сгенерировать кадр по текстовому описанию. Возвращает filename."""
+    """Сгенерировать кадр по текстовому описанию"""
     return {"filename": generate(prompt)}
 
 
