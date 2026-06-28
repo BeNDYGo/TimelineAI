@@ -27,7 +27,6 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     message: str
-    api_key: str = None
     history: List[Dict[str, str]] = []
 
 
@@ -41,7 +40,6 @@ async def chat_endpoint(request: ChatRequest):
         reply = await chat(
             message=request.message,
             history=request.history,
-            api_key=request.api_key,
         )
         return ChatResponse(reply=reply)
     except Exception as e:

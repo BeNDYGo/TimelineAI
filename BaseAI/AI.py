@@ -11,10 +11,10 @@ from system_prompt import SYSTEM_PROMPT
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-client = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
-#client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
-model = "openai/gpt-oss-20b:free"
-#model = "deepseek/deepseek-v4-flash"
+#client = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
+client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
+#model = "meta-llama/llama-3.3-70b-instruct:free" #meta-llama/llama-3.3-70b-instruct:free   # openai/gpt-oss-20b:free
+model = "deepseek/deepseek-v4-flash"
 _stdio_cm = None
 _session = None
 
@@ -57,7 +57,7 @@ async def _tools():
     ]
 
 
-async def chat(message: str, history: list, api_key: str = None) -> str:
+async def chat(message: str, history: list) -> str:
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages += [
         {"role": "user", "content": m["user"]}
@@ -101,8 +101,7 @@ async def _main():
         history = []
         while True:
             user_message = input("\nВы: ")
-            api_key = input("API-ключ: ")
-            response = await chat(user_message, history, api_key=api_key)
+            response = await chat(user_message, history)
             history.append({"user": user_message, "assistant": response})
             print(f"AI: {response}")
     finally:
