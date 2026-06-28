@@ -1,53 +1,112 @@
-import requests
+import asyncio
+import json
 import os
+import sys
 
-history = []
-system_prompt = "Ты полезный AI-ассистент. Отвечай кратко и по делу."
+from openai import AsyncOpenAI
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+from system_prompt import SYSTEM_PROMPT
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+client = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
+
+_stdio_cm = None
+_session = None
 
 
-def chat(message: str, api_key: str, history: list) -> str:
-    #url = "https://routerai.ru/api/v1/chat/completions"
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    
-    headers = {
-        "Content-Type": "application/json"
-    }
-    
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-    
-    messages = [{"role": "system", "content": system_prompt}]
+async def init_mcp():
+    global _stdio_cm, _session
+    _stdio_cm = stdio_client(
+        StdioServerParameters(
+            command=sys.executable, args=["timeline_mcp/server.py"], cwd=ROOT
+        )
+    )
+    read, write = await _stdio_cm.__aenter__()
+    _session = ClientSession(read, write)
+    await _session.__aenter__()
+    await _session.initialize()
+
+
+async def close_mcp():
+    global _stdio_cm, _session
+    if _session:
+        await _session.__aexit__(None, None, None)
+        _session = None
+    if _stdio_cm:
+        await _stdio_cm.__aexit__(None, None, None)
+        _stdio_cm = None
+
+
+async def _tools():
+    result = await _session.list_tools()
+    return [
+        {
+            "type": "function",
+            "function": {
+                "name": t.name,
+                "description": t.description,
+                "parameters": t.inputSchema,
+            },
+        }
+        for t in result.tools
+    ]
+
+
+async def chat(message: str, history: list, api_key: str = None) -> str:
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages += [
-        {"role": "user", "content": msg["user"]} if "user" in msg else
-        {"role": "assistant", "content": msg["assistant"]}
-        for msg in history
+        {"role": "user", "content": m["user"]}
+        if "user" in m
+        else {"role": "assistant", "content": m["assistant"]}
+        for m in history
     ]
     messages.append({"role": "user", "content": message})
 
-    payload = {
-        #"model": "deepseek/deepseek-v4-flash",
-        "model": "openai/gpt-oss-20b:free",
-        "messages": messages
-    }
-    
+    for _ in range(24):
+        response = await client.chat.completions.create(
+            model="openai/gpt-oss-20b:free",
+            messages=messages,
+            tools=await _tools(),
+            api_key=api_key,
+        )
+        msg = response.choices[0].message
+        messages.append(msg.model_dump(exclude_none=True))
+
+        if not msg.tool_calls:
+            return msg.content or ""
+
+        for tc in msg.tool_calls:
+            args = json.loads(tc.function.arguments)
+            result = await _session.call_tool(tc.function.name, args)
+            content = result.content[0].text
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc.id,
+                    "name": tc.function.name,
+                    "content": content,
+                }
+            )
+
+    return "Превышен лимит шагов."
+
+
+async def _main():
+    await init_mcp()
     try:
-        response = requests.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        
-        result = response.json()
-        reply = result["choices"][0]["message"]["content"]
-        return reply
-    
-    except requests.exceptions.RequestException as e:
-        return f"Ошибка запроса: {str(e)}"
-    except (KeyError, IndexError) as e:
-        return f"Ошибка парсинга ответа: {str(e)}"
+        history = []
+        while True:
+            user_message = input("\nВы: ")
+            api_key = input("API-ключ: ")
+            response = await chat(user_message, history, api_key=api_key)
+            history.append({"user": user_message, "assistant": response})
+            print(f"AI: {response}")
+    finally:
+        await close_mcp()
 
 
 if __name__ == "__main__":
-    api_key = os.getenv("API_KEY")
-    while True:
-        user_message = input("\nВы: ")
-        response = chat(user_message, api_key, history)
-        history.append({"user": user_message, "assistant": response})
-        print(f"AI: {response}")
+    asyncio.run(_main())

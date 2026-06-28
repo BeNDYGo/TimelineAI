@@ -11,3 +11,5 @@ supertonic
 soundfile
 
 openai
+
+mcp

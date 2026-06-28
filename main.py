@@ -7,9 +7,7 @@ def run():
     base = os.path.dirname(os.path.abspath(__file__))
 
     services = [
-        ("TTS", 4001, "TTS/API-TTS.py"),
-        ("TTI", 4002, "TTI/API-TTI.py"),
-        ("AI",  4003, "BaseAI/API-AI.py"),
+        ("AI", 4003, "BaseAI/API-AI.py"),
     ]
 
     procs = []

@@ -1,11 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Dict
-from AI import chat
+
+from AI import chat, init_mcp, close_mcp
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_mcp()
+    yield
+    await close_mcp()
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,10 +38,10 @@ class ChatResponse(BaseModel):
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     try:
-        reply = chat(
+        reply = await chat(
             message=request.message,
+            history=request.history,
             api_key=request.api_key,
-            history=request.history
         )
         return ChatResponse(reply=reply)
     except Exception as e:
