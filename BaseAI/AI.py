@@ -1,13 +1,12 @@
+from openai import AsyncOpenAI
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 import asyncio
 import json
 import os
 import sys
-
-from openai import AsyncOpenAI
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-
 from system_prompt import SYSTEM_PROMPT
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

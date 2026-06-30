@@ -7,9 +7,6 @@ import math
 tts = TTS(auto_download=True)
 
 def generateText(voice_style: str, lang: str, text: str) -> dict:
-    '''("M1", "ru", "ПРИВЕТ!!!")  
-    голоса: F1 -> M5
-    '''
 
     filename = f"output_{uuid.uuid4().hex}.wav"
     style = tts.get_voice_style(voice_name=f"{voice_style}")
@@ -18,7 +15,7 @@ def generateText(voice_style: str, lang: str, text: str) -> dict:
         text=text,
         lang=lang,
         voice_style=style,
-        total_steps=8,
+        total_steps=9,
         speed=1.3,
     )
 
