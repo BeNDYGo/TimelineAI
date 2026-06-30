@@ -75,7 +75,6 @@ async def chat(message: str, history: list) -> str:
             tools=await _tools(),
         )
         msg = response.choices[0].message
-        print(f"\n[MCP]: {msg.content}")
         messages.append(msg.model_dump(exclude_none=True))
 
         if not msg.tool_calls:

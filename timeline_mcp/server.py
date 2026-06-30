@@ -28,9 +28,19 @@ def generate_speech(voice_style: str, lang: str, text: str) -> dict:
 
 
 @mcp.tool()
-def generate_image(prompt: str) -> dict:
-    """Сгенерировать кадр по текстовому описанию"""
-    return {"filename": generate(prompt)}
+def generate_image(prompt: str, image: str = None, aspect_ratio: str = "auto") -> dict:
+    """Сгенерировать кадр по текстовому описанию
+    
+    Args:
+        prompt: Текстовое описание изображения
+        image: Имя файла референс-изображения в корне проекта (опционально)
+        aspect_ratio: Соотношение сторон изображения. Доступные значения: 16:9, 9:16, 1:1, auto.
+                   Если по контексту не понятно - укажите auto.
+    
+    Returns:
+        Имя сгенерированного файла
+    """
+    return {"filename": generate(prompt, image=image, aspect_ratio=aspect_ratio)}
 
 
 if __name__ == "__main__":
