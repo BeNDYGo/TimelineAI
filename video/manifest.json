@@ -1,0 +1,28 @@
+{
+  "scenes": [
+    {
+      "scene": 1,
+      "image": "generated_b6cdcf892d73499581ab28cdef6f9679.png",
+      "audio": "output_a7dd37efc645427c9293ae0c2ff296e5.wav",
+      "duration": 9.33
+    },
+    {
+      "scene": 2,
+      "image": "generated_f03ed745834642e6a920918eb33575eb.png",
+      "audio": "output_7d9a50233db1488bac001fcea017f069.wav",
+      "duration": 5.619
+    },
+    {
+      "scene": 3,
+      "image": "generated_4bf7bb3a50204901bd7d498f2aeeaa85.png",
+      "audio": "output_aa69e48ba1734e0cadca08d1e2c71971.wav",
+      "duration": 5.917
+    },
+    {
+      "scene": 4,
+      "image": "generated_a92dee5ff8044a48860959eb4b829360.png",
+      "audio": "output_62bfcc9b566e4f38bfe43949859f2bb1.wav",
+      "duration": 9.047
+    }
+  ]
+}

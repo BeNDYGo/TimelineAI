@@ -13,3 +13,6 @@ soundfile
 openai
 
 mcp
+
+# Склейка видео
+moviepy
