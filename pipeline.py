@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "Bas
 from agent1_producer import run as producer_run
 from agent2_screenwriter import run as screenwriter_run
 from agent3_director import run as director_run
-from log import banner, result, PRODUCER_COLOR, SCREENWRITER_COLOR, DIRECTOR_COLOR
+from log import banner
 
 
 async def main():
@@ -20,20 +20,18 @@ async def main():
         print("Тема не может быть пустой.")
         return
 
-    voice = input("Голос (F1-F5, M1-M5) [M1]: ").strip() or "M1"
-    lang = input("Язык озвучки (ru, en...) [ru]: ").strip() or "ru"
+    voice = input("Голос (m — мужской, w — женский) [m]: ").strip() or "m"
 
     # Шаг 1: Продюссер — тема → бриф
     brief = await producer_run(topic)
-    input("\n--- Нажмите Enter чтобы передать бриф сценаристу ---")
+    #input("\n--- Нажмите Enter чтобы передать бриф сценаристу ---")
 
-    # Шаг 2: Сценарист — бриф → JSON сцен
-    scenario = await screenwriter_run(brief)
-    scenes = scenario.get("scenes", [])
-    input("\n--- Нажмите Enter чтобы начать генерацию файлов ---")
+    # Шаг 2: Сценарист — бриф → текстовый сценарий
+    scenario_text = await screenwriter_run(brief)
+    #input("\n--- Нажмите Enter чтобы начать генерацию файлов ---")
 
-    # Шаг 3: Режиссёр — сценарий → .wav + .png файлы + final.mp4
-    await director_run(scenario, voice=voice, lang=lang)
+    # Шаг 3: Режиссёр — сценарий → аудио + картинки + final.mp4
+    await director_run(scenario_text, voice=voice)
 
     print("\n" + "=" * 55)
     print("  ГОТОВО! Все файлы созданы.")

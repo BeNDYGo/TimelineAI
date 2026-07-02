@@ -1,1 +1,1 @@
-from .TTS import generateText
+from .TTS import generate_text_edge

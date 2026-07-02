@@ -57,13 +57,8 @@ async def _tools():
     ]
 
 
-async def run(scenario: dict, voice: str = "M1", lang: str = "ru") -> list:
+async def run(scenario_text: str, voice: str = "m") -> list:
     banner("РЕЖИССЁР", DIRECTOR_COLOR)
-
-    scenes = scenario.get("scenes", [])
-    if not scenes:
-        thinking("Режиссёр", DIRECTOR_COLOR, "Нет сцен для обработки!")
-        return []
 
     thinking("Режиссёр", DIRECTOR_COLOR, "Очищаю манифест...")
     clear_manifest()
@@ -71,11 +66,9 @@ async def run(scenario: dict, voice: str = "M1", lang: str = "ru") -> list:
     thinking("Режиссёр", DIRECTOR_COLOR, "Инициализирую MCP...")
     await init_mcp()
 
-    scenario_text = json.dumps(scenario, ensure_ascii=False, indent=2)
     user_msg = (
         f"Сценарий:\n{scenario_text}\n\n"
-        f"Голос: {voice}\n"
-        f"Язык: {lang}\n\n"
+        f"Голос: {voice}\n\n"
         f"Сгенерируй аудио и изображения для КАЖДОЙ сцены, сохрани через save_scene, затем собери видео через assemble_video."
     )
 
@@ -84,11 +77,9 @@ async def run(scenario: dict, voice: str = "M1", lang: str = "ru") -> list:
         {"role": "user", "content": user_msg},
     ]
 
-    thinking("Режиссёр", DIRECTOR_COLOR, f"Начинаю продакшен {len(scenes)} сцен...")
+    thinking("Режиссёр", DIRECTOR_COLOR, "Начинаю продакшен...")
 
-    # 3 tools per scene (speech + image + save) + assemble_video + запас
-    max_steps = len(scenes) * 3 + 2
-    for step in range(max_steps):
+    for step in range(30):
         response = await client.chat.completions.create(
             model=model,
             messages=messages,

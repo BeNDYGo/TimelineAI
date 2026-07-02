@@ -36,7 +36,7 @@ def save_scene(scene_number: int, image: str, audio: str, duration: float) -> di
     return {"status": "saved", "scene": scene_number, "total": len(manifest["scenes"])}
 
 
-def assemble_video() -> dict:
+def assemble_video(output_name: str = "final.mp4") -> dict:
     manifest = _read_manifest()
     scenes = sorted(manifest["scenes"], key=lambda s: s["scene"])
 
@@ -62,11 +62,11 @@ def assemble_video() -> dict:
         clips.append(video_clip)
 
     final = concatenate_videoclips(clips, method="compose")
-    output_path = os.path.join(ROOT, "final.mp4")
-    final.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac")
+    output_path = os.path.join(ROOT, output_name)
+    final.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast", threads=6)
 
     for clip in clips:
         clip.close()
     final.close()
 
-    return {"status": "done", "filename": "final.mp4", "scenes": len(scenes)}
+    return {"status": "done", "filename": output_name, "scenes": len(scenes)}

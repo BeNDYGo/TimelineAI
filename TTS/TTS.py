@@ -1,23 +1,28 @@
-from supertonic import TTS
-import soundfile as sf
+import asyncio
+import edge_tts
 import uuid
+import os
 import math
+from mutagen.mp3 import MP3
 
+async def generate_text_edge(text: str, voice: str) -> tuple[str, str]:
+    if voice == "w": 
+        voice_id = "ru-RU-SvetlanaNeural"
+    else: 
+        voice_id = "ru-RU-DmitryNeural"
 
-tts = TTS(auto_download=True)
+    filename = f"output_{uuid.uuid4().hex}.mp3"
+    communicate = edge_tts.Communicate(text, voice_id)
+    await communicate.save(filename)
+    
+    filepath = os.path.abspath(filename)
+    audio = MP3(filepath)
+    duration = audio.info.length
+    duration_formatted = f"{math.ceil(duration * 1000) / 1000}"
+    return filepath, duration_formatted
 
-def generateText(voice_style: str, lang: str, text: str) -> dict:
-
-    filename = f"output_{uuid.uuid4().hex}.wav"
-    style = tts.get_voice_style(voice_name=f"{voice_style}")
-
-    wav, duration = tts.synthesize(
-        text=text,
-        lang=lang,
-        voice_style=style,
-        total_steps=9,
-        speed=1.3,
-    )
-
-    tts.save_audio(wav, filename)
-    return filename, f"{math.ceil(duration[0] * 1000)/1000}"
+if __name__ == "__main__":
+    test_text = "Я установил библиотеку edge-tts для Python. It works perfectly! Надеюсь, этот баг пофиксят."
+    
+    file_path, dur = asyncio.run(generate_text_edge(test_text, "m"))
+    print(f"Файл: {file_path}\nДлительность: {dur} сек.")

@@ -16,3 +16,4 @@ mcp
 
 # Склейка видео
 moviepy
+mutagen
