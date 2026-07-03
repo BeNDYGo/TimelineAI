@@ -8,6 +8,10 @@ from TTS import generate_text_edge
 from TTI import generate
 from video.assembler import save_scene as _save_scene, assemble_video as _assemble_video, clear_manifest
 
+# Import the agent functions
+from agent1_producer import run as producer_run
+from agent2_screenwriter import run as screenwriter_run
+from agent3_director import run as director_run
 
 mcp = FastMCP("timeline-tools")
 
@@ -37,7 +41,7 @@ def generate_image(prompt: str) -> dict:
     Returns:
         Имя сгенерированного файла
     """
-    return {"filename": generate(prompt, aspect_ratio="auto")}
+    return {"filename": generate(prompt, aspect_ratio="9:16")}
 
 
 @mcp.tool()
@@ -65,6 +69,31 @@ def assemble_video() -> dict:
         Результат сборки: путь к файлу и количество сцен
     """
     return _assemble_video()
+
+
+@mcp.tool()
+async def create_video_from_topic(topic: str, voice: str = "m") -> dict:
+    """
+    Полный цикл создания видео: тема -> бриф -> сценарий -> аудио/изображения -> итоговое видео.
+
+    Args:
+        topic: Тема будущего видео.
+        voice: Пол спикера: "m" — мужской, "w" — женский (по умолчанию "m").
+
+    Returns:
+        Словарь с именем файла и статусом.
+    """
+    try:
+        # Шаг 1: Продюссер — тема → бриф
+        brief = await producer_run(topic)
+        # Шаг 2: Сценарист — бриф → текстовый сценарий
+        scenario = await screenwriter_run(brief)
+        # Шаг 3: Режиссёр — сценарий → аудио + картинки + final.mp4
+        await director_run(scenario, voice=voice)
+        # После завершения director_run, файл final.mp4 должен находиться в корне проекта
+        return {"filename": "final.mp4", "status": "done"}
+    except Exception as e:
+        return {"error": str(e), "status": "failed"}
 
 
 if __name__ == "__main__":

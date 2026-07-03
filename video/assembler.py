@@ -1,8 +1,16 @@
 import json
 import os
+import subprocess
+import tempfile
+import shutil
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST_PATH = os.path.join(ROOT, "video", "manifest.json")
+
+# Разрешение вертикального видео (9:16)
+OUTPUT_WIDTH = 1080
+OUTPUT_HEIGHT = 1920
+FPS = 24
 
 
 def _read_manifest() -> dict:
@@ -36,6 +44,35 @@ def save_scene(scene_number: int, image: str, audio: str, duration: float) -> di
     return {"status": "saved", "scene": scene_number, "total": len(manifest["scenes"])}
 
 
+def _get_duration(audio_path: str) -> float:
+    """Получить длительность аудио через ffprobe."""
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            audio_path,
+        ],
+        capture_output=True, text=True
+    )
+    return float(result.stdout.strip())
+
+
+def _ken_burns_filter(duration: float, zoom_start: float = 1.0, zoom_end: float = 1.3) -> str:
+    """
+    Генерирует zoompan-фильтр ffmpeg для эффекта Ken Burns.
+    Плавно зумит от zoom_start до zoom_end за время duration.
+    """
+    num_frames = int(duration * FPS)
+    z_expr = f"{zoom_start}+({zoom_end}-{zoom_start})*on/{num_frames}"
+    return (
+        f"zoompan=z='{z_expr}':"
+        f"d={num_frames}:"
+        f"s={OUTPUT_WIDTH}x{OUTPUT_HEIGHT}:"
+        f"fps={FPS}"
+    )
+
+
 def assemble_video(output_name: str = "final.mp4") -> dict:
     manifest = _read_manifest()
     scenes = sorted(manifest["scenes"], key=lambda s: s["scene"])
@@ -43,30 +80,89 @@ def assemble_video(output_name: str = "final.mp4") -> dict:
     if not scenes:
         return {"error": "No scenes in manifest"}
 
-    from moviepy import ImageClip, AudioFileClip, concatenate_videoclips
+    temp_dir = tempfile.mkdtemp(prefix="timeline_")
+    temp_clips = []
 
-    clips = []
-    for s in scenes:
-        img_path = os.path.join(ROOT, s["image"])
-        aud_path = os.path.join(ROOT, s["audio"])
+    try:
+        for i, s in enumerate(scenes):
+            img_path = os.path.join(ROOT, s["image"])
+            aud_path = os.path.join(ROOT, s["audio"])
 
-        if not os.path.exists(img_path):
-            return {"error": f"Image not found: {s['image']}"}
-        if not os.path.exists(aud_path):
-            return {"error": f"Audio not found: {s['audio']}"}
+            if not os.path.exists(img_path):
+                return {"error": f"Image not found: {s['image']}"}
+            if not os.path.exists(aud_path):
+                return {"error": f"Audio not found: {s['audio']}"}
 
-        audio_clip = AudioFileClip(aud_path)
-        video_clip = ImageClip(img_path).with_duration(audio_clip.duration)
-        video_clip = video_clip.resized((1920, 1080))
-        video_clip = video_clip.with_audio(audio_clip)
-        clips.append(video_clip)
+            # Длительность из манифеста или ffprobe
+            duration = s.get("duration", 0)
+            if duration <= 0:
+                duration = _get_duration(aud_path)
 
-    final = concatenate_videoclips(clips, method="compose")
-    output_path = os.path.join(ROOT, output_name)
-    final.write_videofile(output_path, fps=24, codec="libx264", audio_codec="aac", preset="ultrafast", threads=6)
+            clip_path = os.path.join(temp_dir, f"scene_{i:04d}.mp4")
+            kb_filter = _ken_burns_filter(duration)
 
-    for clip in clips:
-        clip.close()
-    final.close()
+            # --- Шаг 1: изображение с zoompan → видео без звука ---
+            # --- Шаг 2: добавить аудиодорожку ---
+            cmd = [
+                "ffmpeg", "-y",
+                "-loop", "1",
+                "-i", img_path,
+                "-i", aud_path,
+                "-filter_complex",
+                f"[0:v]{kb_filter}[v]",
+                "-map", "[v]",
+                "-map", "1:a",
+                "-c:v", "libx264",
+                "-c:a", "aac",
+                "-shortest",
+                "-pix_fmt", "yuv420p",
+                "-preset", "ultrafast",
+                clip_path
+            ]
 
-    return {"status": "done", "filename": output_name, "scenes": len(scenes)}
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                return {
+                    "error": f"FFmpeg failed on scene {i}: {result.stderr[:500]}",
+                    "scene": s["scene"]
+                }
+
+            temp_clips.append(clip_path)
+
+        if not temp_clips:
+            return {"error": "No clips generated"}
+
+        # Список клипов для конкатенации
+        concat_file = os.path.join(temp_dir, "concat_list.txt")
+        with open(concat_file, "w", encoding="utf-8") as f:
+            for clip_path in temp_clips:
+                f.write(f"file '{clip_path}'\n")
+
+        # Склейка всех сцен
+        output_path = os.path.join(ROOT, output_name)
+        concat_cmd = [
+            "ffmpeg", "-y",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concat_file,
+            "-c", "copy",
+            "-movflags", "+faststart",
+            output_path
+        ]
+
+        result = subprocess.run(concat_cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            return {
+                "error": f"FFmpeg concat failed: {result.stderr[:500]}"
+            }
+
+        return {
+            "status": "done",
+            "filename": output_name,
+            "scenes": len(scenes),
+            "resolution": f"{OUTPUT_WIDTH}x{OUTPUT_HEIGHT}",
+            "fps": FPS
+        }
+
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
