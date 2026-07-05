@@ -3,6 +3,6 @@ venv
 .DS_Store
 .env
 
-.png
-.mp3
-.mp4
+*.png
+*.mp3
+*.mp4
