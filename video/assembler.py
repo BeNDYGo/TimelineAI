@@ -5,6 +5,8 @@ import tempfile
 import shutil
 from shutil import which
 
+from video.subtitles import check_subtitle_dependencies, create_subtitle_overlays
+
 try:
     import imageio_ffmpeg
 except ImportError:
@@ -35,6 +37,9 @@ FFMPEG = _ffmpeg_exe()
 
 
 def preflight_assembly() -> dict:
+    subtitle_status = check_subtitle_dependencies()
+    if subtitle_status["status"] != "ok":
+        return subtitle_status
     return {"status": "ok", "ffmpeg": FFMPEG}
 
 
@@ -93,6 +98,7 @@ def save_scene(
     image: str,
     audio: str,
     duration: float,
+    text: str = "",
     motion: str = "zoom_in",
     zoom_start: float = 1.0,
     zoom_end: float = 1.3,
@@ -116,6 +122,7 @@ def save_scene(
         "image": image,
         "audio": audio,
         "duration": duration,
+        "text": text,
         "motion": motion,
         "zoom_start": zoom_start,
         "zoom_end": zoom_end,
@@ -195,7 +202,51 @@ def _ken_burns_filter(
     )
 
 
+def _burn_subtitle_overlays(input_path: str, output_path: str, overlays: list[dict]) -> dict | None:
+    if not overlays:
+        shutil.copyfile(input_path, output_path)
+        return None
+
+    cmd = [FFMPEG, "-y", "-i", input_path]
+    for overlay in overlays:
+        cmd.extend(["-loop", "1", "-i", overlay["path"]])
+
+    filter_parts = []
+    current = "[0:v]"
+    for index, overlay in enumerate(overlays, start=1):
+        output = f"[v{index}]"
+        start = float(overlay["start"])
+        end = float(overlay["end"])
+        filter_parts.append(
+            f"{current}[{index}:v]"
+            f"overlay=0:0:enable='between(t,{start:.3f},{end:.3f})':format=auto"
+            f"{output}"
+        )
+        current = output
+
+    cmd.extend([
+        "-filter_complex", ";".join(filter_parts),
+        "-map", current,
+        "-map", "0:a?",
+        "-c:v", "libx264",
+        "-c:a", "copy",
+        "-pix_fmt", "yuv420p",
+        "-preset", "ultrafast",
+        "-movflags", "+faststart",
+        "-shortest",
+        output_path,
+    ])
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        return {"error": f"FFmpeg subtitle overlays failed: {result.stderr[:500]}"}
+    return None
+
+
 def assemble_video(output_name: str = "final.mp4") -> dict:
+    subtitle_status = check_subtitle_dependencies()
+    if subtitle_status["status"] != "ok":
+        return subtitle_status
+
     manifest = _read_manifest()
     scenes = sorted(manifest["scenes"], key=lambda s: s["scene"])
 
@@ -272,8 +323,8 @@ def assemble_video(output_name: str = "final.mp4") -> dict:
             for clip_path in temp_clips:
                 f.write(f"file '{clip_path}'\n")
 
-        # Склейка всех сцен
         output_path = os.path.join(ROOT, output_name)
+        raw_output_path = os.path.join(temp_dir, "final_raw.mp4")
         concat_cmd = [
             FFMPEG, "-y",
             "-f", "concat",
@@ -281,7 +332,7 @@ def assemble_video(output_name: str = "final.mp4") -> dict:
             "-i", concat_file,
             "-c", "copy",
             "-movflags", "+faststart",
-            output_path
+            raw_output_path
         ]
 
         result = subprocess.run(concat_cmd, capture_output=True, text=True)
@@ -290,12 +341,18 @@ def assemble_video(output_name: str = "final.mp4") -> dict:
                 "error": f"FFmpeg concat failed: {result.stderr[:500]}"
             }
 
+        overlays = create_subtitle_overlays(scenes, temp_dir)
+        subtitle_error = _burn_subtitle_overlays(raw_output_path, output_path, overlays)
+        if subtitle_error:
+            return subtitle_error
+
         return {
             "status": "done",
             "filename": output_name,
             "scenes": len(scenes),
             "resolution": f"{OUTPUT_WIDTH}x{OUTPUT_HEIGHT}",
-            "fps": FPS
+            "fps": FPS,
+            "subtitles": len(overlays)
         }
 
     finally:

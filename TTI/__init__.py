@@ -1,1 +1,1 @@
-from .TTI import generate
+from .TTI import generate_image
