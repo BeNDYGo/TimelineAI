@@ -2,27 +2,80 @@
   "scenes": [
     {
       "scene": 1,
-      "image": "generated_078a539381df4e6eb168e6d1e9b2e5cf.png",
-      "audio": "output_eb45076b3d3d4c18a8d59bd883442b80.mp3",
-      "duration": 6.384
+      "image": "generated_870fb364f80c4d41a6e42bd48bd02a38.png",
+      "audio": "output_5626786ea9664cd791ea5c608ff7bbfd.mp3",
+      "duration": 16.32,
+      "motion": "zoom_in",
+      "zoom_start": 1.0,
+      "zoom_end": 1.12,
+      "pan_x": "center",
+      "pan_y": "bottom"
     },
     {
       "scene": 2,
-      "image": "generated_87d827f5af984db7a7b72ebf69297f21.png",
-      "audio": "output_5edf0993b818441eb48830d687803d12.mp3",
-      "duration": 2.832
+      "image": "generated_7e7e160f9acc45c2b3e39f9105168dc8.png",
+      "audio": "output_0fa24fea2a344399b359e40fdd3b3450.mp3",
+      "duration": 15.312,
+      "motion": "zoom_in",
+      "zoom_start": 1.0,
+      "zoom_end": 1.3,
+      "pan_x": "left",
+      "pan_y": "center"
     },
     {
       "scene": 3,
-      "image": "generated_afdd9201483c41f9a79ff345f6397ba4.png",
-      "audio": "output_87ba5d322ba347df86b9d656455ebef4.mp3",
-      "duration": 2.568
+      "image": "generated_e06c7dea51514df388e10b9bc9dc1751.png",
+      "audio": "output_41e38eb7bbb34c37864133f0d313a79d.mp3",
+      "duration": 9.36,
+      "motion": "zoom_out",
+      "zoom_start": 1.12,
+      "zoom_end": 1.0,
+      "pan_x": "center",
+      "pan_y": "center"
     },
     {
       "scene": 4,
-      "image": "generated_71277190b5494c7ab3d3551b9b70293c.png",
-      "audio": "output_ebd699d14e5e47c7a0d981a99ef56b58.mp3",
-      "duration": 13.296
+      "image": "generated_07514c840cc24790821bde491b80a6cf.png",
+      "audio": "output_7df12d1196f34af183a07da12199c18a.mp3",
+      "duration": 16.416,
+      "motion": "slow_zoom_in",
+      "zoom_start": 1.0,
+      "zoom_end": 1.12,
+      "pan_x": "right",
+      "pan_y": "center"
+    },
+    {
+      "scene": 5,
+      "image": "generated_5c12eee8348f491492402ca9cb2aadd7.png",
+      "audio": "output_ee3aea3474cc4028bd8d0803d56d6224.mp3",
+      "duration": 16.68,
+      "motion": "zoom_in",
+      "zoom_start": 1.0,
+      "zoom_end": 1.3,
+      "pan_x": "center",
+      "pan_y": "top"
+    },
+    {
+      "scene": 6,
+      "image": "generated_ec7ecc47e78341ecbec377b091e56ba3.png",
+      "audio": "output_54b4a3b5012c43d588cbe4f698f2535e.mp3",
+      "duration": 14.808,
+      "motion": "static",
+      "zoom_start": 1.0,
+      "zoom_end": 1.0,
+      "pan_x": "center",
+      "pan_y": "center"
+    },
+    {
+      "scene": 7,
+      "image": "generated_1b4499792c8b4de88fde7e303fc4ad7f.png",
+      "audio": "output_0dc99a3cf0f54ff998ae327475df9927.mp3",
+      "duration": 13.536,
+      "motion": "zoom_out",
+      "zoom_start": 1.12,
+      "zoom_end": 1.0,
+      "pan_x": "center",
+      "pan_y": "center"
     }
   ]
 }

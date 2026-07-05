@@ -3,18 +3,26 @@ import base64
 import uuid
 import os
 
+from config import ROUTERAI_API_KEY
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-API_KEY = "sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE"
 MODEL = "bytedance-seed/seedream-4.5"
+ASPECT_RATIO = "9:16"
 
-def generate(prompt: str, image: str = None, aspect_ratio: str = "auto") -> str:
+
+def _unique_filename(prefix: str, suffix: str) -> str:
+    while True:
+        filename = f"{prefix}_{uuid.uuid4().hex[:8]}{suffix}"
+        if not os.path.exists(os.path.join(ROOT, filename)):
+            return filename
+
+
+def generate(prompt: str, image: str = None) -> str:
     """Генерирует изображение по промпту, опционально используя референс-изображение
     
     Args:
         prompt: Текстовое описание изображения
         image: Имя файла референс-изображения в корне проекта (опционально)
-        aspect_ratio: Соотношение сторон (16:9, 9:16, 1:1, auto)
     
     Returns:
         Имя сгенерированного файла в корне проекта
@@ -23,8 +31,7 @@ def generate(prompt: str, image: str = None, aspect_ratio: str = "auto") -> str:
         "model": MODEL,
         "prompt": prompt,
         "n": 1,
-        "resolution": "1K",
-        "aspect_ratio": aspect_ratio,
+        "aspect_ratio": ASPECT_RATIO,
     }
     
     if image:
@@ -41,13 +48,16 @@ def generate(prompt: str, image: str = None, aspect_ratio: str = "auto") -> str:
         response = requests.post(
             "https://routerai.ru/api/v1/images",
             headers={
-                "Authorization": f"Bearer {API_KEY}",
+                "Authorization": f"Bearer {ROUTERAI_API_KEY}",
                 "Content-Type": "application/json",
             },
             json=payload,
         )
         
-        response.raise_for_status()
+        if not response.ok:
+            raise RuntimeError(
+                f"RouterAI image error {response.status_code}: {response.text[:1000]}"
+            )
         result = response.json()
     except Exception as e:
         print(f"[TTI ERROR] {e}")
@@ -57,7 +67,7 @@ def generate(prompt: str, image: str = None, aspect_ratio: str = "auto") -> str:
         raise RuntimeError("No image generated")
     
     b64_data = result["data"][0]["b64_json"]
-    filename = f"generated_{uuid.uuid4().hex}.png"
+    filename = _unique_filename("generated", ".png")
     file_path = os.path.join(ROOT, filename)
     
     with open(file_path, "wb") as f:

@@ -1,16 +1,19 @@
-from openai import AsyncOpenAI
+import json
+import os
+import sys
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-import json
-import sys
-import os
-from prompts import DIRECTOR_PROMPT
-from log import banner, thinking, result, DIRECTOR_COLOR
-from video.assembler import clear_manifest
+from openai import AsyncOpenAI
+
+from config import ROUTERAI_API_KEY, ROUTERAI_BASE_URL
+from log import DIRECTOR_COLOR, banner, result, thinking
+from prompts import PRODUCTION_PROMPT
+
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
+client = AsyncOpenAI(base_url=ROUTERAI_BASE_URL, api_key=ROUTERAI_API_KEY)
 model = "deepseek/deepseek-v4-flash"
 
 _mcp_session = None
@@ -43,71 +46,71 @@ async def close_mcp():
 
 
 async def _tools():
-    result = await _mcp_session.list_tools()
+    tool_result = await _mcp_session.list_tools()
     return [
         {
             "type": "function",
             "function": {
-                "name": t.name,
-                "description": t.description,
-                "parameters": t.inputSchema,
+                "name": tool.name,
+                "description": tool.description,
+                "parameters": tool.inputSchema,
             },
         }
-        for t in result.tools
+        for tool in tool_result.tools
     ]
 
 
-async def run(scenario_text: str, voice: str = "m") -> list:
-    banner("РЕЖИССЁР", DIRECTOR_COLOR)
+def _tool_content(mcp_result) -> str:
+    if not mcp_result.content:
+        return ""
+    return mcp_result.content[0].text
 
-    thinking("Режиссёр", DIRECTOR_COLOR, "Очищаю манифест...")
-    clear_manifest()
 
+async def run(storyboard: str) -> list:
+    banner("ПРОИЗВОДСТВО", DIRECTOR_COLOR)
     thinking("Режиссёр", DIRECTOR_COLOR, "Инициализирую MCP...")
     await init_mcp()
 
-    user_msg = (
-        f"Сценарий:\n{scenario_text}\n\n"
-        f"Голос: {voice}\n\n"
-        f"Сгенерируй аудио и изображения для КАЖДОЙ сцены, сохрани через save_scene, затем собери видео через assemble_video."
-    )
-
     messages = [
-        {"role": "system", "content": DIRECTOR_PROMPT},
-        {"role": "user", "content": user_msg},
+        {"role": "system", "content": PRODUCTION_PROMPT},
+        {"role": "user", "content": f"Раскадровка:\n\n{storyboard}"},
     ]
 
-    thinking("Режиссёр", DIRECTOR_COLOR, "Начинаю продакшен...")
-
-    for step in range(30):
-        response = await client.chat.completions.create(
-            model=model,
-            messages=messages,
-            tools=await _tools(),
-        )
-        msg = response.choices[0].message
-        messages.append(msg.model_dump(exclude_none=True))
-
-        if msg.content:
-            result("Режиссёр", DIRECTOR_COLOR, msg.content)
-
-        if not msg.tool_calls:
-            break
-
-        for tc in msg.tool_calls:
-            args = json.loads(tc.function.arguments)
-            thinking("Режиссёр", DIRECTOR_COLOR, f"Вызов: {tc.function.name}({args})")
-            mcp_result = await _mcp_session.call_tool(tc.function.name, args)
-            content = mcp_result.content[0].text
-            result("Режиссёр", DIRECTOR_COLOR, f"Результат: {content}")
-            messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": tc.id,
-                    "name": tc.function.name,
-                    "content": content,
-                }
+    try:
+        for _ in range(60):
+            response = await client.chat.completions.create(
+                model=model,
+                messages=messages,
+                tools=await _tools(),
             )
+            msg = response.choices[0].message
+            messages.append(msg.model_dump(exclude_none=True))
 
-    await close_mcp()
-    return messages
+            if msg.content:
+                result("Режиссёр", DIRECTOR_COLOR, msg.content)
+
+            if not msg.tool_calls:
+                return messages
+
+            for tool_call in msg.tool_calls:
+                args = json.loads(tool_call.function.arguments or "{}")
+                thinking(
+                    "Режиссёр",
+                    DIRECTOR_COLOR,
+                    f"Вызов: {tool_call.function.name}({args})",
+                )
+                mcp_result = await _mcp_session.call_tool(tool_call.function.name, args)
+                content = _tool_content(mcp_result)
+                result("Режиссёр", DIRECTOR_COLOR, f"Результат: {content}")
+                messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "name": tool_call.function.name,
+                        "content": content,
+                    }
+                )
+
+        raise RuntimeError("Производственный агент превысил лимит шагов")
+    finally:
+        await close_mcp()

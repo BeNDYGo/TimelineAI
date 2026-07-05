@@ -6,6 +6,7 @@ import json
 import os
 import sys
 from system_prompt import SYSTEM_PROMPT
+from config import ROUTERAI_API_KEY, ROUTERAI_BASE_URL
 
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,7 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 #client = AsyncOpenAI(base_url="https://openrouter.ai/api/v1", api_key="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")
 #model = "meta-llama/llama-3.3-70b-instruct:free" #meta-llama/llama-3.3-70b-instruct:free   # openai/gpt-oss-20b:free
 
-client = AsyncOpenAI(base_url="https://routerai.ru/api/v1", api_key="sk-OzdSe28mYq9sODbaCjeD8kJ5ASdz7-PE")
+client = AsyncOpenAI(base_url=ROUTERAI_BASE_URL, api_key=ROUTERAI_API_KEY)
 model = "deepseek/deepseek-v4-flash"
 
 _stdio_cm = None

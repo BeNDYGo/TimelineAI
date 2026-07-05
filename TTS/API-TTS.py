@@ -1,13 +1,11 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from TTS import generateText
+from TTS import generate_text
 
 app = FastAPI()
 
 
 class TTSRequest(BaseModel):
-    voice_style: str
-    lang: str
     text: str
 
 class TTSResponse(BaseModel):
@@ -18,11 +16,7 @@ class TTSResponse(BaseModel):
 @app.post("/generate", response_model=TTSResponse)
 async def generate_tts(request: TTSRequest):
     try:
-        filename, duration = generateText(
-            voice_style=request.voice_style,
-            lang=request.lang,
-            text=request.text
-        )
+        filename, duration = await generate_text(request.text)
         
         return TTSResponse(filename=filename, duration=duration)
     
