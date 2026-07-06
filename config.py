@@ -3,6 +3,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
+VODS = ROOT / "VODS"
 ENV_PATH = ROOT / ".env"
 ROUTERAI_BASE_URL = "https://routerai.ru/api/v1"
 

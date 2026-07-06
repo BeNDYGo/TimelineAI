@@ -3,15 +3,11 @@ fastapi
 uvicorn
 pydantic
 
-# Генерация изображений (Text-to-Image)
-requests
-
-# Генерация речи (Text-to-Speech)
+# Генерация изображений и речи
 openai
+requests
 
 mcp
 
 # Склейка видео
-imageio-ffmpeg
-mutagen
 Pillow

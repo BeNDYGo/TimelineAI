@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 
 from mcp.server.fastmcp import FastMCP
 
@@ -14,6 +15,7 @@ from video.assembler import (
     save_scene as _save_scene,
 )
 
+logging.disable(logging.INFO)
 
 mcp = FastMCP("timeline-tools")
 
@@ -35,13 +37,14 @@ def clear_manifest() -> dict:
 async def generate_speech(text: str) -> dict:
     """Создать аудиофайл из текста озвучки."""
     filename, duration = await generate_text(text)
-    return {"filename": os.path.basename(filename), "duration": duration}
+    return {"status": "ok", "filename": filename, "duration": duration}
 
 
 @mcp.tool()
 def generate_image(prompt: str) -> dict:
     """Создать вертикальное изображение 9:16 по промпту."""
-    return {"filename": generate(prompt)}
+    filename = generate(prompt)
+    return {"status": "ok", "filename": filename}
 
 
 @mcp.tool()

@@ -7,7 +7,7 @@ from mcp.client.stdio import stdio_client
 from openai import AsyncOpenAI
 
 from config import ROUTERAI_API_KEY, ROUTERAI_BASE_URL
-from log import DIRECTOR_COLOR, banner, result, thinking
+from log import DIRECTOR_COLOR, RESET
 from prompts import PRODUCTION_PROMPT
 
 
@@ -66,9 +66,23 @@ def _tool_content(mcp_result) -> str:
     return mcp_result.content[0].text
 
 
+def _raise_on_tool_error(tool_name: str, mcp_result, content: str) -> None:
+    if getattr(mcp_result, "isError", False):
+        raise RuntimeError(f"{tool_name} failed: {content}")
+
+    try:
+        data = json.loads(content)
+    except json.JSONDecodeError:
+        return
+
+    status = data.get("status")
+    if status and status != "ok" and status not in {"cleared", "saved", "done"}:
+        raise RuntimeError(f"{tool_name} failed: {content}")
+    if "error" in data:
+        raise RuntimeError(f"{tool_name} failed: {content}")
+
+
 async def run(storyboard: str) -> list:
-    banner("ПРОИЗВОДСТВО", DIRECTOR_COLOR)
-    thinking("Режиссёр", DIRECTOR_COLOR, "Инициализирую MCP...")
     await init_mcp()
 
     messages = [
@@ -87,21 +101,16 @@ async def run(storyboard: str) -> list:
             messages.append(msg.model_dump(exclude_none=True))
 
             if msg.content:
-                result("Режиссёр", DIRECTOR_COLOR, msg.content)
+                print(f"{DIRECTOR_COLOR}{msg.content}{RESET}")
 
             if not msg.tool_calls:
                 return messages
 
             for tool_call in msg.tool_calls:
                 args = json.loads(tool_call.function.arguments or "{}")
-                thinking(
-                    "Режиссёр",
-                    DIRECTOR_COLOR,
-                    f"Вызов: {tool_call.function.name}({args})",
-                )
                 mcp_result = await _mcp_session.call_tool(tool_call.function.name, args)
                 content = _tool_content(mcp_result)
-                result("Режиссёр", DIRECTOR_COLOR, f"Результат: {content}")
+                _raise_on_tool_error(tool_call.function.name, mcp_result, content)
                 messages.append(
                     {
                         "role": "tool",
