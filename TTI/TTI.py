@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from config import ROUTERAI_API_KEY, ROUTERAI_BASE_URL, VODS
 
-MODEL = "bytedance-seed/seedream-4.5"
+MODEL = "recraft/recraft-v4.1-utility"
 IMAGES_URL = f"{ROUTERAI_BASE_URL}/images"
 
 
@@ -23,11 +23,10 @@ def _unique_filename(prefix: str, suffix: str) -> str:
 def generate_image(prompt: str) -> str:
     """Генерирует изображение по промпту и возвращает имя файла."""
     payload = {
-        "model": "bytedance-seed/seedream-4.5",
+        "model": MODEL,
         "prompt": prompt,
         "n": 1,
-        "aspect_ratio": "9:16",
-        "resolution": "4K"
+        "aspect_ratio": "9:16"
     }
 
     try:

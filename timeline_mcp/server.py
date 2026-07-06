@@ -11,19 +11,12 @@ from TTS import generate_text
 from video.assembler import (
     assemble_video as _assemble_video,
     clear_manifest as _clear_manifest,
-    preflight_assembly,
     save_scene as _save_scene,
 )
 
 logging.disable(logging.INFO)
 
 mcp = FastMCP("timeline-tools")
-
-
-@mcp.tool()
-def preflight_video() -> dict:
-    """Проверить, что локальная сборка видео готова до платных генераций."""
-    return preflight_assembly()
 
 
 @mcp.tool()
