@@ -3,6 +3,7 @@ import os
 import subprocess
 import tempfile
 import shutil
+import uuid
 from shutil import which
 
 from video.subtitles import check_subtitle_dependencies, create_subtitle_overlays
@@ -292,7 +293,7 @@ def _build_subtitle_video(overlays: list[dict], output_path: str) -> dict | None
     return None
 
 
-def assemble_video(output_name: str = "final.mp4") -> dict:
+def assemble_video() -> dict:
     subtitle_status = check_subtitle_dependencies()
     if subtitle_status["status"] != "ok":
         return subtitle_status
@@ -380,13 +381,24 @@ def assemble_video(output_name: str = "final.mp4") -> dict:
             for clip_path in temp_clips:
                 f.write(f"file '{clip_path}'\n")
 
-        output_path = os.path.join(ROOT, output_name)
+        while True:
+            output_name = f"final_{uuid.uuid4().hex[:8]}.mp4"
+            output_path = os.path.join(ROOT, output_name)
+            if not os.path.exists(output_path):
+                break
+
         concat_cmd = [
             FFMPEG, "-y",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_file,
-            "-c", "copy",
+            "-filter:v", "setpts=PTS/1.3",
+            "-filter:a", "atempo=1.3",
+            "-c:v", "libx264",
+            "-c:a", "aac",
+            "-pix_fmt", "yuv420p",
+            "-preset", "ultrafast",
+            "-shortest",
             "-movflags", "+faststart",
             output_path
         ]

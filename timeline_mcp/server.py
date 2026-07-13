@@ -70,7 +70,7 @@ def add_scene(
 
 @mcp.tool()
 def assemble_video() -> dict:
-    """Собрать final.mp4 из сцен manifest."""
+    """Собрать итоговое видео из сцен manifest."""
     return _assemble_video()
 
 

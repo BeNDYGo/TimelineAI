@@ -25,7 +25,7 @@ async def main():
     await production_run(storyboard)
 
     print("\n" + "=" * 55)
-    print("  ГОТОВО: final.mp4")
+    print("  ГОТОВО")
     print("=" * 55 + "\n")
 
 
