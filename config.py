@@ -26,6 +26,8 @@ def _load_env_file() -> None:
 _load_env_file()
 
 ROUTERAI_API_KEY = os.getenv("ROUTERAI_API_KEY")
+UPLOAD_POST_API_KEY = os.getenv("UPLOAD_POST_API_KEY")
+UPLOAD_POST_USER = os.getenv("UPLOAD_POST_USER")
 
 if not ROUTERAI_API_KEY:
     raise RuntimeError("ROUTERAI_API_KEY is missing. Add it to .env.")
