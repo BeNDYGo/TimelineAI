@@ -9,14 +9,17 @@ client = AsyncOpenAI(base_url=ROUTERAI_BASE_URL, api_key=ROUTERAI_API_KEY)
 model = "deepseek/deepseek-v4-flash"
 
 
-async def run(story: str) -> str:
+async def run(story: str, project_context: str) -> str:
     banner("РАСКАДРОВЩИК", SCREENWRITER_COLOR)
     thinking("Раскадровщик", SCREENWRITER_COLOR, "Пишу текстовую раскадровку по шаблону...")
 
     response = await client.chat.completions.create(
         model=model,
         messages=[
-            {"role": "system", "content": STORYBOARD_PROMPT},
+            {
+                "role": "system",
+                "content": f"{STORYBOARD_PROMPT}\n\nКОНТЕКСТ ПРОЕКТА:\n{project_context}",
+            },
             {"role": "user", "content": story},
         ],
     )

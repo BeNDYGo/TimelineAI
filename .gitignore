@@ -6,3 +6,5 @@ venv
 *.png
 *.mp3
 *.mp4
+
+.env
